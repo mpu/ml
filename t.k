@@ -21,3 +21,13 @@ y:fwd[W;x]     / training labels
 gd:{[w] mm[,2*(fwd[w;x]-y);+x]0}  / loss gradient
 step:{[w] w-0.001*gd[w]}          / descent step
 30 step\ 2?5                      / train
+
+/ k-means (k=2 on 1d data)
+ds:("ff";" ")0:"data/2means.txt"  / load data
+xs:ds 0                           / points
+
+/ an iteration of k-means
+/ d: distance to each centroid
+/ a: indices of data belonging to each centroid
+km:{d:abs x-\:xs;a:&:'d=\:&/d;avg'xs'a}
+km\xs[2?#xs]    / iterate starting from 2 samples
