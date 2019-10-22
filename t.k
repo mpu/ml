@@ -31,3 +31,6 @@ xs:ds 0                           / points
 / a: indices of data belonging to each centroid
 km:{d:abs x-\:xs;a:&:'d=\:&/d;avg'xs'a}
 km\xs[2?#xs]    / iterate starting from 2 samples
+
+/ n-grams
+ng:{[n;l] (n-1)_(n#0){1_x,y}\l}
