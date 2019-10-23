@@ -34,3 +34,10 @@ km\xs[2?#xs]    / iterate starting from 2 samples
 
 / n-grams
 ng:{[n;l] (n-1)_(n#0){1_x,y}\l}
+
+cut:{1_'(&x=*x)_x:" ",x}    / cut words
+lc:{`c$x+32*(x in 65+!26)}  / lower case
+kp:{x^".,-_!?"}             / kill punctuation
+
+hg:0:"data/hegel.txt"       / read the text
+hg:(kp'lc',/cut'hg)^,""     / normalize it
