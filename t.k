@@ -40,6 +40,6 @@ lc:{`c$x+32*x in 65+!26}    / lower case
 kp:^[;".,-_!?"]             / kill punctuation
 
 hg:0:"data/hegel.txt"       / read the text
-hg:(kp'lc',/cut'hg)^,""     / normalize it
+hg:(,/cut'kp'lc'hg)^,""     / normalize it
 
 30#dsc#:'=hg                / 30 most used words
