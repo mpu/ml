@@ -41,3 +41,5 @@ kp:^[;".,-_!?"]             / kill punctuation
 
 hg:0:"data/hegel.txt"       / read the text
 hg:(kp'lc',/cut'hg)^,""     / normalize it
+
+30#dsc#:'=hg                / 30 most used words
