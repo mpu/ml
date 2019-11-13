@@ -87,24 +87,27 @@ module CG = struct
   let rec eval env n =
     evaln (eval env) env n
 
-  (* evaluation with memoization *)
-  let evalm env n =
+  let memfix f =
     let m = Hashtbl.create 10 in
     let rec fix n =
       try Hashtbl.find m n.id
       with Not_found ->
-        let res = evaln fix env n in
+        let res = f fix n in
         Hashtbl.add m n.id res;
         res
     in
-    fix n
+    fix
+
+  (* evaluation with memoization *)
+  let evalm env =
+    memfix (fun f -> evaln f env)
 
   (* extend the computation graph
      to compute the differential
      of the argument node and
      return it *)
-  let fwd_grad n =
-    let rec go n =
+  let fwd_grad =
+    let go go n =
       match n.op with
       | Con _ ->
         SMap.empty
@@ -143,7 +146,7 @@ module CG = struct
           (go n1)
           (go n2)
     in
-    go n
+    memfix go
 
 end
 
@@ -166,19 +169,25 @@ let _ =
       (pp_l pp_bnd) (SMap.to_seq e)
   in
   let epf = Format.eprintf in
+
+  let run ~memo env g gname =
+    let eval =
+      if memo
+      then CG.evalm
+      else CG.eval
+    in
+    epf "%s(%a) = %f@."
+      gname pp_e env (eval env g);
+    epf "Stats, %s memoization: %a@."
+      (if memo then "with" else "no")
+      Stat.dump CG.st;
+    Stat.reset CG.st
+  in
+
   let env = SMap.singleton "x" 3. in
 
-  epf "g1(%a) = %f@."
-    pp_e env (CG.eval env g1);
-  epf "Stats, no memoization: %a@."
-    Stat.dump CG.st;
-  Stat.reset CG.st;
-
-  epf "g1(%a) = %f@."
-    pp_e env (CG.evalm env g1);
-  epf "Stats, with memoization: %a@."
-    Stat.dump CG.st;
-  Stat.reset CG.st;
+  run ~memo:false env g1 "g1";
+  run ~memo:true env g1 "g1";
 
   let dg1 = CG.fwd_grad g1 in
   epf "Grad keys: @[<h>%a@]@."
@@ -187,6 +196,27 @@ let _ =
   let env = SMap.of_seq @@
     List.to_seq ["x", 2.; "x'", 1.] in
   let dg1x = SMap.find "x'" dg1 in
-  epf "dg1(%a) = %f@."
-    pp_e env (CG.evalm env dg1x)
 
+  run ~memo:false env dg1x "dg1x";
+  run ~memo:true env dg1x "dg1x";
+
+  let g2 =
+    let open CG in
+    let x0 = mk (Par "x") in
+    let x1 = mk (Mul (x0, x0)) in
+    let x2 = mk (Mul (x1, x1)) in
+    let x3 = mk (Mul (x2, x2)) in
+    let x4 = mk (Mul (x3, x3)) in
+    let x5 = mk (Mul (x4, x4)) in
+    let x6 = mk (Mul (x5, x5)) in
+    let x7 = mk (Mul (x6, x6)) in
+    x7
+  in
+
+  let dg2 = CG.fwd_grad g2 in
+  let dg2x = SMap.find "x'" dg2 in
+
+  run ~memo:false env g2 "g2";
+  run ~memo:false env dg2x "dg2x";
+  run ~memo:true env dg2x "dg2x";
+  ()
